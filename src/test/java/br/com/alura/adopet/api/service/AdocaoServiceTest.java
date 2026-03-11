@@ -59,6 +59,7 @@ class AdocaoServiceTest {
     @Mock
     private Abrigo abrigo;
 
+    // aqui poderia ser um mock, mas preferiu testar com dados reais
     private SolicitacaoAdocaoDto dto;
 
     @Captor
@@ -68,17 +69,24 @@ class AdocaoServiceTest {
     void deveriaSalvarAdocaoAoSolicitar() {
 
         //ARRANGE
+        // cria um objeto dto
         this.dto = new SolicitacaoAdocaoDto(10l, 20l, "motivo qualquer");
+        // chama os objetos pet e tutor do dto e testa se existe
         given(petRepository.getReferenceById(dto.idPet())).willReturn(pet);
         given(tutorRepository.getReferenceById(dto.idTutor())).willReturn(tutor);
         given(pet.getAbrigo()).willReturn(abrigo);
+        // chama o spy pra testar se o método add de validações está funcionando passando objetos mockados
         validacoes.add(validador1);
         validacoes.add(validador2);
 
         //ACT
+        // testa se a chamada dentro do service está chamando para salvar no banco
+        // ta passando um dto com dados mockados fictícios se tivesse com o @Mock ativo em private SolicitacaoAdocaoDto dto;
         service.solicitar(dto);
 
         //ASSERT
+        // testa se o método foi chamado usando o spy
+        // pode utilizar o then ou o bddmockito
         BDDMockito.then(validador1).should().validar(dto);
         BDDMockito.then(validador2).should().validar(dto);
 
@@ -99,6 +107,7 @@ class AdocaoServiceTest {
         //ASSERT
         then(repository).should().save(adocaoCaptor.capture());
         Adocao adocaoSalva = adocaoCaptor.getValue();
+        // verifica se os dados foram realmente foram salvos com o captor
         Assertions.assertEquals(pet, adocaoSalva.getPet());
         Assertions.assertEquals(tutor, adocaoSalva.getTutor());
         Assertions.assertEquals(dto.motivo(), adocaoSalva.getMotivo());
