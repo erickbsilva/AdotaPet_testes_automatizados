@@ -10,14 +10,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.*;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @AutoConfigureJsonTesters
 class AdocaoControllerTest {
@@ -30,6 +31,9 @@ class AdocaoControllerTest {
 
     @Autowired
     private JacksonTester<SolicitacaoAdocaoDto> jsonDto;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     // não vai usar a service de verdade, e sim um mock do serviço
     @MockBean
@@ -76,6 +80,7 @@ class AdocaoControllerTest {
     @Test
     void deveriaDevolverCodigo200ParaRequsisicaoDeSolicitarAdocaoComDadosValidos() throws Exception {
         //ARRANGE
+        // simula um dto real e converte depois para um json
         SolicitacaoAdocaoDto dto = new SolicitacaoAdocaoDto(1l, 1l, "Motivo qualquer");
 
         //ACT
@@ -88,6 +93,50 @@ class AdocaoControllerTest {
         //ASSERT
         assertEquals(200, response.getStatus());
         assertEquals("Adoção solicitada com sucesso!", response.getContentAsString());
+    }
+
+    @Test
+    void deveriaDevolverCodigo400ParaSolicitacaoDeAdocaoComErrosSimulandoChamadaReal() {
+        // ARRANGE
+        String json = "{}";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // ACT
+        ResponseEntity<Void> response = restTemplate.exchange(
+                "/adocoes",
+                HttpMethod.POST,
+                new HttpEntity<>(json, headers),
+                Void.class
+        );
+
+        // ASSERT
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void deveriaDevolverCodigo200ParaSolicitacaoDeAdocaoSemErrosSimulandoChamadaReal() {
+        // ARRANGE
+        String json = """
+                {
+                    "idPet": 1,
+                    "idTutor": 1,
+                    "motivo": "Motivo qualquer"
+                }
+                """;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // ACT
+        ResponseEntity<Void> response = restTemplate.exchange(
+                "/adocoes",
+                HttpMethod.POST,
+                new HttpEntity<>(json, headers),
+                Void.class
+        );
+
+        // ASSERT
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
 }
