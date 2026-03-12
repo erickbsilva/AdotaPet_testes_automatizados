@@ -23,7 +23,7 @@ public class AdocaoController {
     public ResponseEntity<String> solicitar(@RequestBody @Valid SolicitacaoAdocaoDto dto) {
         try {
             this.adocaoService.solicitar(dto);
-            return ResponseEntity.ok("Adoção solciitada com sucesso!");
+            return ResponseEntity.ok("Adoção solicitada com sucesso!");
         } catch (ValidationException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
