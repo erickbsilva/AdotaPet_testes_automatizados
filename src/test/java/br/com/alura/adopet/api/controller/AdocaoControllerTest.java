@@ -1,43 +1,30 @@
 package br.com.alura.adopet.api.controller;
 
-import br.com.alura.adopet.api.dto.SolicitacaoAdocaoDto;
 import br.com.alura.adopet.api.service.AdocaoService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 @AutoConfigureMockMvc
-@AutoConfigureJsonTesters
 class AdocaoControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
 
     @Autowired
     private MockMvc mvc;
 
-    @Autowired
-    private JacksonTester<SolicitacaoAdocaoDto> jsonDto;
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    // não vai usar a service de verdade, e sim um mock do serviço
     @MockBean
     private AdocaoService service;
+
 
     @Test
     void deveriaDevolverCodigo400ParaSolicitacaoDeAdocaoComErros() throws Exception {
@@ -59,12 +46,12 @@ class AdocaoControllerTest {
     void deveriaDevolverCodigo200ParaSolicitacaoDeAdocaoSemErros() throws Exception {
         //ARRANGE
         String json = """
-            {
-                "idPet": 1,
-                "idTutor": 1,
-                "motivo": "Motivo qualquer"
-            }
-            """;
+                {
+                    "idPet": 1,
+                    "idTutor": 1,
+                    "motivo": "Motivo qualquer"
+                }
+                """;
 
         //ACT
         var response = mvc.perform(
@@ -78,65 +65,84 @@ class AdocaoControllerTest {
     }
 
     @Test
-    void deveriaDevolverCodigo200ParaRequsisicaoDeSolicitarAdocaoComDadosValidos() throws Exception {
+    void deveriaDevolverCodigo200ParaRequisicaoDeAprovarAdocao() throws Exception {
         //ARRANGE
-        // simula um dto real e converte depois para um json
-        SolicitacaoAdocaoDto dto = new SolicitacaoAdocaoDto(1l, 1l, "Motivo qualquer");
+        String json = """
+                {
+                    "idAdocao": 1
+                }
+                """;
 
         //ACT
-        MockHttpServletResponse response = mockMvc.perform(
-                post("/adocoes")
-                        .content(jsonDto.write(dto).getJson())
+        MockHttpServletResponse response = mvc.perform(
+                put("/adocoes/aprovar")
+                        .content(json)
                         .contentType(MediaType.APPLICATION_JSON)
         ).andReturn().getResponse();
 
         //ASSERT
-        assertEquals(200, response.getStatus());
-        assertEquals("Adoção solicitada com sucesso!", response.getContentAsString());
+        assertEquals(200,response.getStatus());
     }
 
     @Test
-    void deveriaDevolverCodigo400ParaSolicitacaoDeAdocaoComErrosSimulandoChamadaReal() {
-        // ARRANGE
-        String json = "{}";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // ACT
-        ResponseEntity<Void> response = restTemplate.exchange(
-                "/adocoes",
-                HttpMethod.POST,
-                new HttpEntity<>(json, headers),
-                Void.class
-        );
-
-        // ASSERT
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    void deveriaDevolverCodigo200ParaSolicitacaoDeAdocaoSemErrosSimulandoChamadaReal() {
-        // ARRANGE
+    void deveriaDevolverCodigo400ParaRequisicaoDeAprovarAdocaoInvalida() throws Exception{
+        //ARRANGE
         String json = """
                 {
-                    "idPet": 1,
-                    "idTutor": 1,
-                    "motivo": "Motivo qualquer"
+                    
                 }
                 """;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // ACT
-        ResponseEntity<Void> response = restTemplate.exchange(
-                "/adocoes",
-                HttpMethod.POST,
-                new HttpEntity<>(json, headers),
-                Void.class
-        );
+        //ACT
+        MockHttpServletResponse response = mvc.perform(
+                put("/adocoes/aprovar")
+                        .content(json)
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andReturn().getResponse();
 
-        // ASSERT
-        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        //ASSERT
+        assertEquals(400,response.getStatus());
+    }
+
+    @Test
+    void deveriaDevolverCodigo200ParaRequisicaoDeReprovarAdocao() throws Exception {
+        //ARRANGE
+        String json = """
+                {
+                    "idAdocao": 1,
+                    "justificativa": "qualquer"
+                }
+                """;
+
+        //ACT
+        MockHttpServletResponse response = mvc.perform(
+                put("/adocoes/reprovar")
+                        .content(json)
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andReturn().getResponse();
+
+        //ASSERT
+        assertEquals(200,response.getStatus());
+    }
+
+    @Test
+    void deveriaDevolverCodigo400ParaRequisicaoDeReprovarAdocaoInvalido() throws Exception{
+        //ARRANGE
+        String json = """
+                {
+
+                }
+                """;
+
+        //ACT
+        MockHttpServletResponse response = mvc.perform(
+                put("/adocoes/reprovar")
+                        .content(json)
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andReturn().getResponse();
+
+        //ASSERT
+        assertEquals(400,response.getStatus());
     }
 
 }
