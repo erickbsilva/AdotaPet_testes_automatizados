@@ -91,4 +91,12 @@ public class Adocao {
         this.status = StatusAdocao.REPROVADO;
         this.justificativaStatus = justificativa;
     }
+
+    public void setTutor(Tutor tutor) {
+        this.tutor = tutor;
+    }
+
+    public void setStatus(StatusAdocao status) {
+        this.status = status;
+    }
 }
